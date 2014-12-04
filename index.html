@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+	<link rel="apple-touch-icon" sizes="57x57" href="apple-touch-icon-57x57.png">
+	<link rel="apple-touch-icon" sizes="60x60" href="apple-touch-icon-60x60.png">
+	<link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16">
+	<link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32">
+	<meta name="msapplication-TileColor" content="#da532c">
+    <meta charset="utf-8">
+    <title>VeloBleu.org Unofficial Live View</title>
+    <style>
+      html, body, #map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerclusterer/1.0.2/src/markerclusterer_compiled.js"></script>
+    <script>
+
+var markers = {};
+var yourMarker = null;
+	
+function refreshPosition() {
+	var MARKER_ICON = 'marker.png';
+	if(navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition(function(position) {
+			if(yourMarker == null) {
+				yourMarker = new google.maps.Marker({
+					map: googleMaps,
+					draggable: false,
+					icon: MARKER_ICON
+				});
+			}
+			yourMarker.setPosition(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
+			setTimeout(refreshPosition, 15000);
+		}, function() {
+			// User did not accept or geolocation error
+		});
+	} else {
+		// Browser doesn't support Geolocation
+	}
+}
+	
+function initializeGoogleMaps() {
+	var googleMap = new google.maps.Map(
+		document.getElementById('map-canvas'),
+		{
+			zoom: 14,
+			center: new google.maps.LatLng(43.710043, 7.261953) // Nice coords
+		}
+	);
+
+	var bikeLayer = new google.maps.BicyclingLayer();
+	bikeLayer.setMap(googleMap);
+	return googleMap;
+}
+
+function refreshVeloBleus() {
+	var clusterize = true;
+	// Icons from http://mapicons.nicolasmollet.com
+	var ASSET_LOCATION = 'assets/';
+	var IMAGES = 'images/';
+	var PARKING_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'parking.png';
+	var BIKE_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'bike.png';
+	var PARKING_AND_BIKE_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'parking_and_bike.png';
+	// Fields | tc = total capacity // ac = available capacity // ap = available parking // ab = available bike
+	// var VELOBLEU_URL = 'http://www.velo-vision.com/nice/oybike/stands.nsf/getsite?site=nice&format=json'
+	$.ajax({
+		// Bypass CORS thanks to jsonp.nodejitsu.com
+		url: 'https://jsonp.nodejitsu.com/?url=http%3A%2F%2Fwww.velo-vision.com%2Fnice%2Foybike%2Fstands.nsf%2Fgetsite%3Fsite%3Dnice%26format%3Djson',
+		dataType: 'json',
+		success: function(data) {
+			for(var index = 0; index < data.stand.length; index++) {
+				if(markers[data.stand[index].id] == undefined) {
+					markers[data.stand[index].id] = new google.maps.Marker({
+						map: googleMaps,
+						draggable:false,
+						position: new google.maps.LatLng(data.stand[index].lat, data.stand[index].lng)
+					});
+				}
+				// Set marker icons
+				markers[data.stand[index].id].setTitle("Station " + data.stand[index].id + " (" + data.stand[index].ab + " Bikes / " + data.stand[index].ap + " Parkings)");
+				if(data.stand[index].ap > 0 && data.stand[index].ab > 0)
+					markers[data.stand[index].id].setIcon(PARKING_AND_BIKE_AVAILABLE_ICON);
+				else
+				{
+					if(data.stand[index].ap > 0)
+						markers[data.stand[index].id].setIcon(PARKING_AVAILABLE_ICON);
+					if(data.stand[index].ab > 0)
+						markers[data.stand[index].id].setIcon(BIKE_AVAILABLE_ICON);
+				}
+			}
+			if(clusterize) {
+				var markerCluster = new MarkerClusterer(googleMaps, markers, { gridSize: 100, maxZoom: 18 }); //, {gridSize: 100, maxZoom: 14}
+				clusterize = false;
+			}
+		}
+	});
+	setTimeout(refreshVeloBleus, 30000);
+}
+
+$(function() {
+	googleMaps = initializeGoogleMaps();
+	refreshVeloBleus();
+	refreshPosition();
+});
+
+
+    </script>
+	<!-- Google Analytics -->
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+	  ga('create', 'UA-9443143-4', 'auto');
+	  ga('send', 'pageview');
+
+	</script>
+	<!-- End Google Analytics -->
+  </head>
+  <body>
+    <div id="map-canvas"></div>
+  </body>
+</html>

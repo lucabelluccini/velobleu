@@ -93,7 +93,12 @@ function refreshVeloBleus() {
 					markers[data.stand[index].id].addTo(map);
 				}
 				// Update it
-				markers[data.stand[index].id].bindPopup("Station " + data.stand[index].id + " (" + data.stand[index].ab + " Bikes / " + data.stand[index].ap + " Parkings)");
+				var text = " (" + data.stand[index].ab + " Bikes / " + data.stand[index].ap + " Parkings)";
+				if (data.stand[index].disp == 0)
+					text = " not available";
+				if (data.stand[index].neutral == 1)
+					text = " neutralized";
+				markers[data.stand[index].id].bindPopup("Station " + data.stand[index].id + text);
 				if(data.stand[index].ap > 0 && data.stand[index].ab > 0)
 				{
 					markers[data.stand[index].id].setIcon(parkingAndBikeIcon);

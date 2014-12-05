@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 	<link rel="apple-touch-icon" sizes="57x57" href="apple-touch-icon-57x57.png">
 	<link rel="apple-touch-icon" sizes="60x60" href="apple-touch-icon-60x60.png">
 	<link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16">
@@ -16,57 +16,67 @@
         padding: 0px
       }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-	<script src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerclusterer/1.0.2/src/markerclusterer_compiled.js"></script>
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
     <script>
 
-var markers = {};
-var yourMarker = null;
+var ASSET_LOCATION = 'assets/';
+var IMAGES = 'images/';
+var NICE_LAT = 43.710043;
+var NICE_LNG = 7.261953;
+
+var ocm = L.tileLayer('http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png', {id: 'MapID', attribution: 'Map data © <a href="http://opencyclemap.org">OpenCycleMap</a> contributors'});
+var osm = L.tileLayer('http://{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png', {id: 'MapID', attribution: 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'});
+var transport = L.tileLayer('http://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png', {id: 'MapID', attribution: 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'});
+var baseMaps = {
+	'OpenCycleMap': ocm,
+	'OpenStreetMap B&W': osm,
+	'Transport': transport
+};
+var map;
+function initializeLeaflet() {
+	map = new L.Map('map-canvas', {
+		center: [ NICE_LAT, NICE_LNG ],
+		zoom: 10,
+		layers: [ transport ]
+	});
+	L.control.layers(baseMaps).addTo(map);
 	
-function refreshPosition() {
-	var MARKER_ICON = 'marker.png';
-	if(navigator.geolocation) {
-		navigator.geolocation.getCurrentPosition(function(position) {
-			if(yourMarker == null) {
-				yourMarker = new google.maps.Marker({
-					map: googleMaps,
-					draggable: false,
-					icon: MARKER_ICON
-				});
-			}
-			yourMarker.setPosition(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
-			setTimeout(refreshPosition, 15000);
-		}, function() {
-			// User did not accept or geolocation error
-		});
-	} else {
-		// Browser doesn't support Geolocation
-	}
+	// Set NICE view
+	map.setView(new L.LatLng(NICE_LAT, NICE_LNG), 12);
 }
-	
-function initializeGoogleMaps() {
-	var googleMap = new google.maps.Map(
-		document.getElementById('map-canvas'),
-		{
-			zoom: 14,
-			center: new google.maps.LatLng(43.710043, 7.261953) // Nice coords
+
+// Create a Location Icon
+var myMarker;
+var LOCATION_ICON = 'marker.png';
+var locationIcon = L.icon({iconUrl: ASSET_LOCATION + IMAGES + LOCATION_ICON});
+// Watch location
+// TODO Make it optional
+// TODO Make "setView" optional
+function setupGeoloc() {
+	map.locate({watch: true}) //setView: true, maxZoom:16, 
+	.on('locationfound', function(event) {
+		if(myMarker == undefined) {
+			myMarker = L.marker(event.latlng);
+			myMarker.addTo(map);
 		}
-	);
-
-	var bikeLayer = new google.maps.BicyclingLayer();
-	bikeLayer.setMap(googleMap);
-	return googleMap;
+		console.log("HI");
+		myMarker.setLatLng(event.latlng);
+	});
 }
 
+
+var markers = {};
+
+// Icons from http://mapicons.nicolasmollet.com
+var BIKE_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'bike.png';
+var bikeIcon = L.icon({iconUrl: BIKE_AVAILABLE_ICON});
+var PARKING_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'parking.png';
+var parkingIcon = L.icon({iconUrl: PARKING_AVAILABLE_ICON});
+var PARKING_AND_BIKE_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'parking_and_bike.png';
+var parkingAndBikeIcon = L.icon({iconUrl: PARKING_AND_BIKE_AVAILABLE_ICON});
 function refreshVeloBleus() {
-	var clusterize = true;
-	// Icons from http://mapicons.nicolasmollet.com
-	var ASSET_LOCATION = 'assets/';
-	var IMAGES = 'images/';
-	var PARKING_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'parking.png';
-	var BIKE_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'bike.png';
-	var PARKING_AND_BIKE_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'parking_and_bike.png';
 	// Fields | tc = total capacity // ac = available capacity // ap = available parking // ab = available bike
 	// var VELOBLEU_URL = 'http://www.velo-vision.com/nice/oybike/stands.nsf/getsite?site=nice&format=json'
 	$.ajax({
@@ -74,39 +84,36 @@ function refreshVeloBleus() {
 		url: 'https://jsonp.nodejitsu.com/?url=http%3A%2F%2Fwww.velo-vision.com%2Fnice%2Foybike%2Fstands.nsf%2Fgetsite%3Fsite%3Dnice%26format%3Djson',
 		dataType: 'json',
 		success: function(data) {
+			// For each stand
 			for(var index = 0; index < data.stand.length; index++) {
-				if(markers[data.stand[index].id] == undefined) {
-					markers[data.stand[index].id] = new google.maps.Marker({
-						map: googleMaps,
-						draggable:false,
-						position: new google.maps.LatLng(data.stand[index].lat, data.stand[index].lng)
-					});
-				}
-				// Set marker icons
-				markers[data.stand[index].id].setTitle("Station " + data.stand[index].id + " (" + data.stand[index].ab + " Bikes / " + data.stand[index].ap + " Parkings)");
-				if(data.stand[index].ap > 0 && data.stand[index].ab > 0)
-					markers[data.stand[index].id].setIcon(PARKING_AND_BIKE_AVAILABLE_ICON);
-				else
+				if(markers[data.stand[index].id] == undefined)
 				{
-					if(data.stand[index].ap > 0)
-						markers[data.stand[index].id].setIcon(PARKING_AVAILABLE_ICON);
-					if(data.stand[index].ab > 0)
-						markers[data.stand[index].id].setIcon(BIKE_AVAILABLE_ICON);
+					// Create it
+					markers[data.stand[index].id] = L.marker([data.stand[index].lat, data.stand[index].lng]);
+					markers[data.stand[index].id].addTo(map);
 				}
+				// Update it
+				markers[data.stand[index].id].bindPopup("Station " + data.stand[index].id + " (" + data.stand[index].ab + " Bikes / " + data.stand[index].ap + " Parkings)");
+				if(data.stand[index].ap > 0 && data.stand[index].ab > 0)
+				{
+					markers[data.stand[index].id].setIcon(parkingAndBikeIcon);
+					continue;
+				}
+				if(data.stand[index].ap > 0)
+					markers[data.stand[index].id].setIcon(parkingIcon);
+				if(data.stand[index].ab > 0)
+					markers[data.stand[index].id].setIcon(bikeIcon);
 			}
-			if(clusterize) {
-				var markerCluster = new MarkerClusterer(googleMaps, markers, { gridSize: 100, maxZoom: 18 }); //, {gridSize: 100, maxZoom: 14}
-				clusterize = false;
-			}
+			
 		}
 	});
 	setTimeout(refreshVeloBleus, 30000);
 }
 
 $(function() {
-	googleMaps = initializeGoogleMaps();
+	googleMaps = initializeLeaflet();
+	setupGeoloc();
 	refreshVeloBleus();
-	refreshPosition();
 });
 
 

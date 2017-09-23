@@ -76,6 +76,8 @@ var PARKING_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'parking.png';
 var parkingIcon = L.icon({iconUrl: PARKING_AVAILABLE_ICON});
 var PARKING_AND_BIKE_AVAILABLE_ICON = ASSET_LOCATION + IMAGES + 'parking_and_bike.png';
 var parkingAndBikeIcon = L.icon({iconUrl: PARKING_AND_BIKE_AVAILABLE_ICON});
+var NEUTRALIZED_ICON = ASSET_LOCATION + IMAGES + 'neutralized.png';
+var neutralizedIcon = L.icon({iconUrl: NEUTRALIZED_ICON});
 function refreshVeloBleus() {
 	// Fields | tc = total capacity // ac = available capacity // ap = available parking // ab = available bike
 	// var VELOBLEU_URL = 'http://www.velo-vision.com/nice/oybike/stands.nsf/getsite?site=nice&format=json'
@@ -96,7 +98,10 @@ function refreshVeloBleus() {
 				if (data.stand[index].disp == 0)
 					text = " not available";
 				if (data.stand[index].neutral == 1)
+				{
 					text = " neutralized";
+					markers[data.stand[index].id].setIcon(neutralizedIcon);
+				}
 				markers[data.stand[index].id].bindPopup("Station " + data.stand[index].id + text);
 				if(data.stand[index].ap > 0 && data.stand[index].ab > 0)
 				{

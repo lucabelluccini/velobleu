@@ -80,8 +80,7 @@ function refreshVeloBleus() {
 	// Fields | tc = total capacity // ac = available capacity // ap = available parking // ab = available bike
 	// var VELOBLEU_URL = 'http://www.velo-vision.com/nice/oybike/stands.nsf/getsite?site=nice&format=json'
 	$.ajax({
-		// Bypass CORS thanks to jsonp.nodejitsu.com
-		url: 'https://jsonp.nodejitsu.com/?url=http%3A%2F%2Fwww.velo-vision.com%2Fnice%2Foybike%2Fstands.nsf%2Fgetsite%3Fsite%3Dnice%26format%3Djson',
+		url: 'velo-vision.php',
 		dataType: 'json',
 		success: function(data) {
 			// For each stand

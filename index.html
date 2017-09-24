@@ -16,9 +16,13 @@
         padding: 0px
       }
     </style>
-	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"
+  integrity="sha512-M2wvCLH6DSRazYeZRIm1JnYyh22purTM+FDB5CsyxtQJYeKq83arPe5wgbNmcFXGqiSH2XR8dT/fJISVA1r/zQ=="
+  crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"
+  integrity="sha512-lInM/apFSqyy1o6s89K4iQUKg6ppXEgsVxT35HbzUupEVRh2Eu9Wdl4tHj7dZO0s1uvplcYGmt3498TtHq+log=="
+  crossorigin=""></script>
     <script>
 
 var ASSET_LOCATION = 'assets/';
@@ -26,25 +30,31 @@ var IMAGES = 'images/';
 var NICE_LAT = 43.710043;
 var NICE_LNG = 7.261953;
 
-var ocm = L.tileLayer('http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png', {id: 'MapID', attribution: 'Map data © <a href="http://opencyclemap.org">OpenCycleMap</a> contributors'});
-var osm = L.tileLayer('http://{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png', {id: 'MapID', attribution: 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'});
-var transport = L.tileLayer('http://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png', {id: 'MapID', attribution: 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'});
+var ocm = L.tileLayer('https://{s}.tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=e36374ec8b3043208ffdc92aff4d5bf0', {id: 'MapID', attribution: 'Map data © <a href="http://opencyclemap.org">OpenCycleMap</a> contributors'});
+var osmfr = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+    attribution: 'donn&eacute;es &copy; <a href="//osm.org/copyright">OpenStreetMap</a>/ODbL - rendu <a href="//openstreetmap.fr">OSM France</a>',
+    minZoom: 1,
+    maxZoom: 20
+});
+var transport = L.tileLayer('https://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png?apikey=e36374ec8b3043208ffdc92aff4d5bf0', {id: 'MapID', attribution: 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'});
+var mat = L.tileLayer('https://{s}.tile.thunderforest.com/mobile-atlas/{z}/{x}/{y}.png?apikey=e36374ec8b3043208ffdc92aff4d5bf0', {id: 'MapID', attribution: 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'});
 var baseMaps = {
 	'OpenCycleMap': ocm,
-	'OpenStreetMap B&W': osm,
-	'Transport': transport
+	'OpenStreetMap France': osmfr,
+	'Transport': transport,
+	'Mobile Atlas': mat,
 };
 var map;
 function initializeLeaflet() {
 	map = new L.Map('map-canvas', {
 		center: [ NICE_LAT, NICE_LNG ],
-		zoom: 10,
-		layers: [ transport ]
+		zoom: 15,
+		layers: [ osmfr ]
 	});
 	L.control.layers(baseMaps).addTo(map);
 	
 	// Set NICE view
-	map.setView(new L.LatLng(NICE_LAT, NICE_LNG), 12);
+	map.setView(new L.LatLng(NICE_LAT, NICE_LNG), 15);
 }
 
 // Create a Location Icon
@@ -55,13 +65,12 @@ var locationIcon = L.icon({iconUrl: ASSET_LOCATION + IMAGES + LOCATION_ICON});
 // TODO Make it optional
 // TODO Make "setView" optional
 function setupGeoloc() {
-	map.locate({watch: true}) //setView: true, maxZoom:16, 
+	map.locate({watch: true,setView: true, maxZoom:16})
 	.on('locationfound', function(event) {
 		if(myMarker == undefined) {
 			myMarker = L.marker(event.latlng);
 			myMarker.addTo(map);
 		}
-		console.log("HI");
 		myMarker.setLatLng(event.latlng);
 	});
 }

@@ -7,7 +7,7 @@ Just a fullscreen view of map data with markers showing status of VeloBleu.org b
 
 Using leaflet because of faster and smoother on mobile devices.
 
-At the moment, you can access to it at www.lucabelluccini.com/velobleu2
+At the moment, you can access to it at www.lucabelluccini.com/velobleu
 
 Icons from http://mapicons.nicolasmollet.com
 
